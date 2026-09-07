@@ -1,0 +1,25 @@
+Create a Manage Users page
+Tasks:
+1. Create a Manage Users page.
+2. Create an “Add User” form where the following information is required: name and role.
+3. Submit the form: The created user will be saved in a Firestore Collection alongside the
+creation date & time.
+4. Display the users stored.
+5. Add the capability to search for a user by its username or role.
+6. Have the following abilities edit, enable/disable or remove the user. Removing a user
+should call a Firebase Cloud Function to remove that user.
+7. Make it pretty and user friendly and add any functionality you see fit.
+
+Context:
+1. Do not store any email address or personal data, just the “username” and “role” will be
+enough for this task.
+2. Deploy the application in Firebase Hosting and send the URL alongside the
+GitHub/Gitlab Repository Link (please do not use Autolomous related name in your
+project).
+3. Add alexis@autolomous.com to your Firebase project
+
+Frameworks and Platforms to use:
+1. Angular v16+ with Angular CLI (https://angular.io/guide/quickstart)
+2. Google Firebase Hosting, Firestore & Functions (https://firebase.google.com)
+3. AngularFire v7+ (https://github.com/angular/angularfire)
+4. SASS/SCSS

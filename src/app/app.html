@@ -1,0 +1,221 @@
+<div class="page-shell">
+  <!-- Top Navigation / Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-badge">⚡</div>
+        <h1 class="brand-title">Manage Users</h1>
+      </div>
+      <button type="button" class="btn btn-primary" (click)="openAddModal()">
+        + Add User
+      </button>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  @if (notification()) {
+    <div class="notification-bar" [class.success]="notification()?.type === 'success'" [class.error]="notification()?.type === 'error'">
+      <span>{{ notification()?.message }}</span>
+    </div>
+  }
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Filter Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search by username or role..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        />
+        @if (searchTerm()) {
+          <button type="button" class="btn-clear" (click)="searchTerm.set('')">✕</button>
+        }
+      </div>
+
+      <div class="role-filter-wrap">
+        <select
+          class="form-control select-control"
+          [ngModel]="roleFilter()"
+          (ngModelChange)="roleFilter.set($event)"
+        >
+          <option value="all">All Roles</option>
+          @for (role of roles; track role) {
+            <option [value]="role">{{ role }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card table-card">
+      @if (loading()) {
+        <div class="status-box">
+          <p>Loading users from Firestore...</p>
+        </div>
+      } @else if (filteredUsers().length === 0) {
+        <div class="status-box">
+          <p>No users found.</p>
+          @if (searchTerm() || roleFilter() !== 'all') {
+            <button type="button" class="btn btn-secondary btn-sm" (click)="searchTerm.set(''); roleFilter.set('all')">
+              Reset Filters
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of filteredUsers(); track user.id) {
+                <tr [class.disabled-row]="user.status === 'disabled'">
+                  <td class="font-medium">{{ user.username }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="'badge-' + user.role.toLowerCase()">
+                      {{ user.role }}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="status-toggle"
+                      [class.active]="user.status === 'active'"
+                      (click)="toggleStatus(user)"
+                      title="Click to toggle status"
+                    >
+                      <span class="toggle-dot"></span>
+                      <span>{{ user.status === 'active' ? 'Active' : 'Disabled' }}</span>
+                    </button>
+                  </td>
+                  <td class="text-muted">
+                    {{ user.createdAt | date:'short' }}
+                  </td>
+                  <td class="text-right">
+                    <button type="button" class="btn-action edit" (click)="openEditModal(user)" title="Edit">
+                      Edit
+                    </button>
+                    <button type="button" class="btn-action delete" (click)="openDeleteModal(user)" title="Delete (Cloud Function)">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </main>
+
+  <!-- Add / Edit Modal -->
+  @if (isModalOpen()) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editingUser() ? 'Edit User' : 'Add User' }}</h2>
+          <button type="button" class="btn-close" (click)="closeModal()">✕</button>
+        </div>
+
+        <form (ngSubmit)="saveUser()" class="modal-form">
+          @if (formError()) {
+            <div class="form-error-alert">{{ formError() }}</div>
+          }
+
+          <div class="form-group">
+            <label for="modal-username">Username / Name</label>
+            <input
+              id="modal-username"
+              type="text"
+              class="form-control"
+              placeholder="e.g. Alex Morgan"
+              [ngModel]="formUsername()"
+              (ngModelChange)="formUsername.set($event)"
+              name="username"
+              required
+              autofocus
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="modal-role">Role</label>
+            <select
+              id="modal-role"
+              class="form-control"
+              [ngModel]="formRole()"
+              (ngModelChange)="formRole.set($event)"
+              name="role"
+            >
+              @for (role of roles; track role) {
+                <option [value]="role">{{ role }}</option>
+              }
+            </select>
+          </div>
+
+          @if (editingUser()) {
+            <div class="form-group">
+              <label for="modal-status">Status</label>
+              <select
+                id="modal-status"
+                class="form-control"
+                [ngModel]="formStatus()"
+                (ngModelChange)="formStatus.set($event)"
+                name="status"
+              >
+                <option value="active">Active</option>
+                <option value="disabled">Disabled</option>
+              </select>
+            </div>
+          }
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="isSaving()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+              {{ isSaving() ? 'Saving...' : (editingUser() ? 'Update' : 'Create') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (userToDelete()) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Delete User</h2>
+          <button type="button" class="btn-close" (click)="cancelDelete()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Are you sure you want to delete <strong>{{ userToDelete()?.username }}</strong>?
+          </p>
+          <p class="text-sm text-muted">
+            This will call the Firebase Cloud Function to remove the user from Firestore.
+          </p>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="cancelDelete()" [disabled]="isDeleting()">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-danger" (click)="executeDelete()" [disabled]="isDeleting()">
+            {{ isDeleting() ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
