@@ -22,8 +22,8 @@ A real-time user management dashboard built with modern **Angular (Zoneless + Si
 | Layer | Technology | Description |
 | :--- | :--- | :--- |
 | **Frontend Framework** | Angular (v21) | Standalone components with Zoneless Change Detection (`provideZonelessChangeDetection`) and Signals |
-| **Database** | Cloud Firestore | Real-time NoSQL document store (`/users` collection) |
-| **Serverless Backend** | Firebase Cloud Functions (v2) | TypeScript callable RPC function for audited document deletion |
+| **Database** | Cloud Firestore | Real-time NoSQL document store (`/users` collection in `manage-users-db`) |
+| **Serverless Backend** | Firebase Cloud Functions (v2) | TypeScript callable function for audited document deletion |
 | **Hosting** | Firebase Hosting | Production-grade CDN serving the compiled Single Page Application (SPA) |
 | **Styling** | SCSS | Clean, responsive design system with role badges and modal dialogs |
 
@@ -35,7 +35,7 @@ A real-time user management dashboard built with modern **Angular (Zoneless + Si
 ├── src/
 │   ├── app/
 │   │   ├── models/
-│   │   │   └── user.model.ts      # User and Role interfaces
+│   │   │   └── user.model.ts      # User interface and types
 │   │   ├── services/
 │   │   │   └── user.service.ts    # Firestore CRUD & Cloud Function service
 │   │   ├── app.ts                 # Main component logic & state signals
@@ -43,10 +43,8 @@ A real-time user management dashboard built with modern **Angular (Zoneless + Si
 │   │   ├── app.scss               # Component styles
 │   │   └── app.config.ts          # Zoneless Angular configuration
 │   ├── environments/
-│   │   ├── environment.ts         # Dev environment (imports from config.ts)
-│   │   └── environment.prod.ts    # Prod environment (imports from config.ts)
-│   ├── config.ts                  # Zod-validated Firebase config from process.env
-│   ├── env.d.ts                   # TypeScript declarations for process.env
+│   │   ├── environment.ts         # Firebase configuration (development)
+│   │   └── environment.prod.ts    # Firebase configuration (production)
 │   ├── index.html
 │   ├── main.ts
 │   └── styles.scss                # Global styles and resets
@@ -57,8 +55,6 @@ A real-time user management dashboard built with modern **Angular (Zoneless + Si
 │   └── tsconfig.json
 ├── firestore.rules                # Firestore security rules
 ├── firebase.json                  # Firebase Hosting, Functions & Firestore config
-├── .env                           # Local environment variables (git-ignored)
-├── .env.example                   # Example env file for new developers
 └── README.md
 ```
 
@@ -82,31 +78,11 @@ Install Cloud Functions dependencies:
 cd functions && npm install && cd ..
 ```
 
-### 3. Environment Setup
+### 3. Firebase Configuration
 
-Copy the example env file and populate it with your Firebase project credentials:
-```bash
-cp .env.example .env
-```
-
-Your `.env` file should look like:
-```env
-API_KEY=your_firebase_api_key
-AUTH_DOMAIN=your_project_id.firebaseapp.com
-PROJECT_ID=your_project_id
-STORAGE_BUCKET=your_project_id.firebasestorage.app
-MESSAGING_SENDER_ID=your_messaging_sender_id
-APP_ID=your_app_id
-MEASUREMENT_ID=your_measurement_id
-```
-
-> ⚠️ **Never commit `.env` to version control.** It is listed in `.gitignore`.
-
-The environment files (`environment.ts` / `environment.prod.ts`) import from `src/config.ts`, which validates all required variables using **Zod** at startup. If any variable is missing, you will get a clear validation error immediately.
+Firebase configuration is committed directly in `src/environments/environment.ts`. Firebase web API keys are public project identifiers — security is enforced entirely through Firestore security rules, not by keeping the config secret. This is [explicitly documented by Google](https://firebase.google.com/docs/projects/api-keys).
 
 ### 4. Run the Application Locally
-
-`npm start` uses Node's native `--env-file` flag to load `.env` before the Angular CLI starts:
 
 ```bash
 npm start
@@ -139,7 +115,6 @@ firebase deploy --only functions
 ```
 
 ### Step 3: Build & Deploy Angular Hosting
-Compile the production bundle (loads `.env` automatically) and deploy to Firebase Hosting:
 ```bash
 npm run build
 firebase deploy --only hosting
